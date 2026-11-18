@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Univers animé : l’encyclopédie des animés, mangas et personnages</title>
+<meta name="description" content="Encyclopédie communautaire francophone des animés, mangas et personnages.">
+<meta name="theme-color" content="#0b0a14">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="haut">
+  <a class="logo" href="#/">Univers animé</a>
+  <nav class="menu" aria-label="Navigation principale">
+    <a href="#/catalogue/anime">Animés</a>
+    <a href="#/catalogue/manga">Mangas</a>
+    <a href="#/catalogue/personnage">Personnages</a>
+    <a href="#/ajouter/anime">Contribuer</a>
+  </nav>
+  <form class="rech rech-haut" role="search">
+    <input type="search" name="q" placeholder="Rechercher" aria-label="Rechercher" autocomplete="off">
+  </form>
+  <div id="compte"></div>
+</header>
+<main id="app"></main>
+<footer class="pied">Encyclopédie participative : les fiches sont écrites et relues par la communauté.</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
