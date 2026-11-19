@@ -100,7 +100,7 @@ async function accueil() {
   const contribs = [...(an.data || []).map(x => ({ ...x, t: 'Anecdote' })), ...(cm.data || []).map(x => ({ ...x, t: `Commentaire de ${x.profiles?.pseudo || 'un membre'}` }))]
     .sort((x, y) => y.created_at.localeCompare(x.created_at)).slice(0, 6);
   const vide = `Aucune fiche pour l’instant. <a href="#/ajouter/anime">Ajoute la première.</a>`;
-  (app.innerHTML = \``)
+   app.innerHTML = `
     <section class="hero-neon">
       <span class="hero-v g">アニメの世界へ</span><span class="hero-v d">一緒に探そう</span>
       <span class="hero-jp">ようこそ</span>
