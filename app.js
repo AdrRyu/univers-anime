@@ -99,9 +99,9 @@ async function accueil() {
   const contribs = [...(an.data || []).map(x => ({ ...x, t: 'Anecdote' })), ...(cm.data || []).map(x => ({ ...x, t: `Commentaire de ${x.profiles?.pseudo || 'un membre'}` }))]
     .sort((x, y) => y.created_at.localeCompare(x.created_at)).slice(0, 6);
   const vide = `Aucune fiche pour l’instant. <a href="#/ajouter/anime">Ajoute la première.</a>`;
-  app.innerHTML = `
-    <section class="hero"><h1>Tous les animés, mangas et personnages, écrits par la communauté</h1>
+      <section class="hero"><h1>Tous les animés, mangas et personnages, écrits par la communauté</h1>
       <p>Cherche une œuvre, un personnage, un auteur ou un studio.</p>
+      <form class="rech rech-hero" role="search"><input type="search" name="q" placeholder="Ex. : un titre, un personnage, un studio" aria-label="Rechercher" required><button class="btn">Rechercher</button></form></section>
       <form class="rech rech-hero" role="search"><input type="search" name="q" placeholder="Ex. : un titre, un personnage, un studio" aria-label="Rechercher" required><button class="btn">Rechercher</button></form></section>
     ${section('Animés et mangas populaires', grille(pop.data, carteO, vide), '#/catalogue/anime?tri=vues')}
     ${section('Dernières fiches ajoutées', grille(rec.data, carteO, 'Les nouvelles fiches apparaîtront ici.'), '#/catalogue/anime')}
