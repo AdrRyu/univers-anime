@@ -96,13 +96,27 @@ async function accueil() {
     sb.from('anecdotes').select('texte,created_at,oeuvre_id,personnage_id').eq('publication', 'publie').order('created_at', { ascending: false }).limit(5),
     sb.from('commentaires').select('texte,created_at,oeuvre_id,personnage_id,profiles(pseudo)').order('created_at', { ascending: false }).limit(5)
   ]);
+  for (const r of [pop, rec, per]) if (r.error) throw r.error;
   const contribs = [...(an.data || []).map(x => ({ ...x, t: 'Anecdote' })), ...(cm.data || []).map(x => ({ ...x, t: `Commentaire de ${x.profiles?.pseudo || 'un membre'}` }))]
     .sort((x, y) => y.created_at.localeCompare(x.created_at)).slice(0, 6);
   const vide = `Aucune fiche pour l’instant. <a href="#/ajouter/anime">Ajoute la première.</a>`;
-app.innerHTML =
-  <section class="hero"><h1>Tous les animés, mangas et personnages, écrits par la communauté</h1>
-      <p>Cherche une œuvre, un personnage, un auteur ou un studio.</p>
-      <form class="rech rech-hero" role="search"><input type="search" name="q" placeholder="Ex. : un titre, un personnage, un studio" aria-label="Rechercher" required><button class="btn">Rechercher</button></form></section>
+  app.innerHTML = `
+    <section class="hero-neon">
+      <span class="hero-v g">アニメの世界へ</span><span class="hero-v d">一緒に探そう</span>
+      <span class="hero-jp">ようこそ</span>
+      <h1>AnimeVerse</h1>
+      <p class="hero-slogan">Ton portail dédié aux animés</p>
+      <p class="hero-texte">Fiches d’animés, de mangas et de personnages écrites par la communauté. Plonge dans l’univers de tes œuvres préférées !</p>
+      <form class="rech rech-neon" role="search"><input type="search" name="q" placeholder="Rechercher un animé, un personnage…" aria-label="Rechercher" required><button class="btn">Rechercher »</button></form>
+      <div class="hero-cartes">
+        <a class="hero-carte" href="#/catalogue/anime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="12" rx="2"/><path d="M8 3l4 4 4-4"/><path d="M10.5 10.5v5l4-2.5z"/></svg><span><b>Animés</b><small>Découvre une vaste sélection d’animés</small></span><i class="fl">›</i></a>
+        <a class="hero-carte" href="#/catalogue/personnage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span><b>Personnages</b><small>Apprends-en plus sur tes héros préférés</small></span><i class="fl">›</i></a>
+        <a class="hero-carte" href="#/catalogue/manga"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6c-2-1.5-5-2-8-2v14c3 0 6 .5 8 2 2-1.5 5-2 8-2V4c-3 0-6 .5-8 2z"/><path d="M12 6v14"/></svg><span><b>Mangas</b><small>Explore les mangas et leurs histoires</small></span><i class="fl">›</i></a>
+        <a class="hero-carte" href="#/ajouter/anime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span><b>Contribuer</b><small>Ajoute des fiches et rejoins la communauté</small></span><i class="fl">›</i></a>
+      </div>
+      <a class="btn-explore" href="#/catalogue/anime">Explore dès maintenant »</a>
+      <button type="button" class="hero-fleche" aria-label="Voir la suite" onclick="document.querySelector('.titre-sec').scrollIntoView({behavior:'smooth'})">↓</button>
+    </section>
     ${section('Animés et mangas populaires', grille(pop.data, carteO, vide), '#/catalogue/anime?tri=vues')}
     ${section('Dernières fiches ajoutées', grille(rec.data, carteO, 'Les nouvelles fiches apparaîtront ici.'), '#/catalogue/anime')}
     ${section('Personnages les plus consultés', grille(per.data, carteP, `Aucun personnage pour l’instant. <a href="#/ajouter/personnage">Crée la première fiche.</a>`), '#/catalogue/personnage?tri=vues')}
