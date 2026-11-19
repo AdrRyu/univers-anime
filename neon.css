@@ -16,7 +16,7 @@ body{background:
   border:1px solid rgba(167,139,250,.55);border-radius:22px;margin-top:.5rem;
   padding:clamp(7rem,15vw,10rem) clamp(1rem,4vw,3rem) 2rem;
   background:
-    url("hero.jpg") center/cover no-repeat,
+    url("hero.jpg.png") center/cover no-repeat,
     radial-gradient(circle 110px at 50% 120px,#fff 0,#e5dcff 35%,#a78bfa 72%,rgba(139,92,246,0) 100%),
     radial-gradient(circle 340px at 50% 120px,rgba(139,92,246,.5),transparent),
     linear-gradient(180deg,#14103a 0%,#1b1250 45%,#0b0a14 100%);
