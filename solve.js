@@ -13,12 +13,12 @@ const villageDe = id => VILLAGES.find(v => v.id === id);
 
 /* Style des cartes de villages */
 document.head.insertAdjacentHTML('beforeend', `<style>
-.villages{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
-.village{text-align:center;padding:1rem .8rem .8rem;border-color:var(--c)}
+.villages{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.village{text-align:center;padding:1.5rem 1rem 1rem;border-color:var(--c)}
 .village:hover{border-color:var(--c);box-shadow:0 0 24px var(--c)}
-.village .village-logo,.village-logo{display:block!important;width:44px!important;height:44px!important;max-width:44px!important;aspect-ratio:1/1!important;margin:0 auto!important;object-fit:contain!important;filter:drop-shadow(0 0 8px var(--c))}
-h1 .village-logo.petit,.village-logo.petit{display:inline-block!important;width:28px!important;height:28px!important;max-width:28px!important;margin:0 .5rem 0 0!important;vertical-align:middle}
-.village-nom{font:700 1.15rem Sora,system-ui,sans-serif;margin:.4rem 0 0}
+.village-logo{display:block;width:72px;height:72px;margin:0 auto;object-fit:contain;filter:drop-shadow(0 0 10px var(--c))}
+.village-logo.petit{display:inline-block;width:40px;height:40px;margin:0 .6rem 0 0;vertical-align:middle}
+.village-nom{font:700 1.3rem Sora,system-ui,sans-serif;margin:.5rem 0 0}
 </style>`);
 
 const carteSolve = p => `<a class="carte" href="#/solve/fiche/${p.id}">${vignette(p.image_url, p.nom)}<div class="carte-t"><b>${esc(nomP(p))}</b><span>${esc(p.metier || 'Solve RP')}</span></div></a>`;
