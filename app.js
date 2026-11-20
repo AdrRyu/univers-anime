@@ -46,14 +46,22 @@ async function envoyer(fichier, bucket) {
 /* ---------- Navigation et session ---------- */
 function nav() {
   const initiale = esc((profil?.pseudo || '?')[0].toUpperCase());
+  const mod = user && ['moderateur', 'admin'].includes(profil?.role);
   $('#compte').innerHTML = user
-    ? `${estMod() ? '<a href="#/moderation" class="btn petit sec">Modération</a>' : ''}<a href="#/profil" class="pastille" title="Mon profil">${profil?.avatar_url ? `<img src="${esc(profil.avatar_url)}" alt="">` : initiale}</a><button class="btn petit sec" id="deco">Se déconnecter</button>`
+    ? `${mod ? `<a href="#/notifications" id="cloche" class="cloche" title="Notifications">🔔<span id="cloche-n" class="cloche-n" hidden></span></a>` : ''}<a href="#/profil" class="pastille" title="Mon profil">${profil?.avatar_url ? `<img src="${esc(profil.avatar_url)}" alt="">` : initiale}</a><button class="btn petit sec" id="deco">Se déconnecter</button>`
     : `<a href="#/connexion" class="btn petit">Se connecter</a>`;
   $('#deco')?.addEventListener('click', () => sb.auth.signOut());
+  majCloche();
 }
-async function charger(u) {
-  user = u; profil = null;
-  if (user) { const { data } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle(); profil = data; }
+
+async function majCloche() {
+  const n = $('#cloche-n');
+  if (!n) return;
+  const { count } = await sb.from('notifications').select('*', { count: 'exact', head: true }).eq('lue', false);
+  n.textContent = count > 99 ? '99+' : (count || '');
+  n.hidden = !count;
+}
+setInterval(() => { if (user) majCloche(); }, 60000);
   nav(); route();
 }
 document.addEventListener('submit', e => {
@@ -69,6 +77,7 @@ async function route() {
   const [chemin, qs] = (location.hash.slice(1) || '/').split('?');
   const q = new URLSearchParams(qs || '');
   const [a, b] = chemin.split('/').filter(Boolean);
+  class="charge">Chargement…</div>';
   app.innerHTML = '<div class="charge">Chargement…</div>';
   window.scrollTo(0, 0);
   try {
@@ -80,6 +89,7 @@ async function route() {
     else if (a === 'personnage') await ficheP(+b);
     else if (a === 'connexion') connexion(q.get('mode'));
     else if (a === 'profil') await pageProfil(b ? decodeURIComponent(b) : null);
+    else if (a === 'notifications') await pageNotifs();
     else if (a === 'ajouter') await formFiche(b);
     else if (a === 'moderation') await moderation();
     else app.innerHTML = introuvable();
@@ -446,6 +456,16 @@ async function moderation() {
   }));
 }
 
+async function pageNotifs() {
+  if (!user) { location.hash = '#/connexion'; return; }
+  const { data, error } = await sb.from('notifications').select('*').order('created_at', { ascending: false }).limit(50);
+  if (error) throw error;
+  app.innerHTML = `<h1>Notifications</h1>
+    <p><button class="btn petit sec" id="tout-lu">Tout marquer comme lu</button></p>
+    ${data?.length ? `<div class="bloc">${data.map(n => `<p class="anec">${n.lue ? '' : '<em class="badge">Nouveau</em> '}<a href="${esc(n.lien || '#/')}" data-notif="${n.id}">${esc(n.texte)}</a><br><small>${date(n.created_at)}</small></p>`).join('')}</div>` : '<p class="vide-txt">Aucune notification pour l’instant.</p>'}`;
+  $$('[data-notif]').forEach(a => a.addEventListener('click', () => sb.from('notifications').update({ lue: true }).eq('id', a.dataset.notif)));
+  $('#tout-lu')?.addEventListener('click', async () => { await sb.from('notifications').update({ lue: true }).eq('lue', false); majCloche(); route(); });
+}
 /* ---------- Démarrage ---------- */
 (async () => {
   const { data: { session } } = await sb.auth.getSession();
