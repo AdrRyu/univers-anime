@@ -7,6 +7,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const STATUTS = { termine: 'Terminé', en_cours: 'En cours', a_venir: 'À venir' };
 const GENRES = ['Action', 'Aventure', 'Comédie', 'Drame', 'Fantasy', 'Horreur', 'Isekai', 'Mecha', 'Psychologique', 'Romance', 'Science-fiction', 'Slice of life', 'Sport', 'Surnaturel', 'Thriller'];
 let user = null, profil = null;
+const estMod = () => ['moderateur', 'admin'].includes(profil?.role);
 
 /* ---------- Outils ---------- */
 function toast(m, err = false) {
@@ -46,7 +47,7 @@ async function envoyer(fichier, bucket) {
 function nav() {
   const initiale = esc((profil?.pseudo || '?')[0].toUpperCase());
   $('#compte').innerHTML = user
-    ? `<a href="#/profil" class="pastille" title="Mon profil">${profil?.avatar_url ? `<img src="${esc(profil.avatar_url)}" alt="">` : initiale}</a><button class="btn petit sec" id="deco">Se déconnecter</button>`
+    ? `${estMod() ? '<a href="#/moderation" class="btn petit sec">Modération</a>' : ''}<a href="#/profil" class="pastille" title="Mon profil">${profil?.avatar_url ? `<img src="${esc(profil.avatar_url)}" alt="">` : initiale}</a><button class="btn petit sec" id="deco">Se déconnecter</button>`
     : `<a href="#/connexion" class="btn petit">Se connecter</a>`;
   $('#deco')?.addEventListener('click', () => sb.auth.signOut());
 }
@@ -79,6 +80,7 @@ async function route() {
     else if (a === 'connexion') connexion(q.get('mode'));
     else if (a === 'profil') await pageProfil(b ? decodeURIComponent(b) : null);
     else if (a === 'ajouter') await formFiche(b);
+    else if (a === 'moderation') await moderation();
     else app.innerHTML = introuvable();
   } catch (e) {
     console.error(e);
@@ -402,6 +404,43 @@ async function formFiche(type) {
       location.hash = `#/${perso ? 'personnage' : 'oeuvre'}/${res.data.id}`;
     } catch (err) { toast(err.message, true); bouton.disabled = false; }
   });
+}
+
+/* ---------- Modération ---------- */
+async function moderation() {
+  if (!estMod()) {
+    app.innerHTML = `<div class="bloc etroit"><h1>Accès réservé</h1><p>Cette page est réservée aux modérateurs.</p><a class="btn" href="#/">Retour à l’accueil</a></div>`;
+    return;
+  }
+  const att = t => sb.from(t).select('*').neq('publication', 'publie').neq('publication', 'refuse').order('created_at', { ascending: true });
+  const [o, p, a, g, s] = await Promise.all([
+    att('oeuvres'), att('personnages'), att('anecdotes'), att('galerie'),
+    sb.from('signalements').select('*').order('created_at', { ascending: false }).limit(30)
+  ]);
+  for (const r of [o, p, a, g]) if (r.error) throw r.error;
+  const boutons = (table, id) => `<div style="margin-top:.6rem;display:flex;gap:.5rem"><button class="btn petit" data-mod="${table}:${id}:publie">Accepter</button><button class="btn petit sec" data-mod="${table}:${id}:refuse">Refuser</button></div>`;
+  const bloc = (titre, items, fn) => `<section class="bloc"><h2>${titre} (${items?.length || 0})</h2>${items?.length ? items.map(fn).join('') : '<p class="vide-txt">Rien à valider.</p>'}</section>`;
+  const lienFiche = x => x.oeuvre_id ? `#/oeuvre/${x.oeuvre_id}` : `#/personnage/${x.personnage_id}`;
+  app.innerHTML = `<h1>Modération</h1>
+    <p class="vide-txt">Les propositions des visiteurs apparaissent ici. « Accepter » les publie sur le site, « Refuser » les cache.</p>
+    ${bloc('Fiches animés et mangas', o.data, x => `<div class="comm"><b>${esc(x.titre)}</b> (${x.type === 'manga' ? 'manga' : 'animé'}) <a href="#/oeuvre/${x.id}">voir la fiche</a><br>${esc((x.synopsis || '').slice(0, 220))}${boutons('oeuvres', x.id)}</div>`)}
+    ${bloc('Fiches personnages', p.data, x => `<div class="comm"><b>${esc(nomP(x))}</b> <a href="#/personnage/${x.id}">voir la fiche</a><br>${esc((x.personnalite || x.histoire || '').slice(0, 220))}${boutons('personnages', x.id)}</div>`)}
+    ${bloc('Anecdotes', a.data, x => `<div class="comm">${esc(x.texte)}<br><a href="${lienFiche(x)}">voir la fiche</a>${boutons('anecdotes', x.id)}</div>`)}
+    ${bloc('Images de galerie', g.data, x => `<div class="comm"><img src="${esc(x.url)}" alt="" style="max-width:220px;border-radius:10px"><br>${x.legende ? esc(x.legende) + '<br>' : ''}<small>Source : ${esc(x.source || 'non indiquée')}</small> <a href="#/personnage/${x.personnage_id}">voir la fiche</a>${boutons('galerie', x.id)}</div>`)}
+    ${bloc('Signalements', s.data, x => `<div class="comm"><b>${esc(x.cible_type)} n°${esc(x.cible_id)}</b> : ${esc(x.raison)} <a href="#/${x.cible_type === 'oeuvre' ? 'oeuvre' : 'personnage'}/${esc(x.cible_id)}">voir la fiche</a><div style="margin-top:.6rem"><button class="btn petit sec" data-sig="${x.id}">Supprimer le signalement</button></div></div>`)}`;
+  $$('[data-mod]').forEach(b => b.addEventListener('click', async () => {
+    const [table, id, etat] = b.dataset.mod.split(':');
+    b.disabled = true;
+    const { data, error } = await sb.from(table).update({ publication: etat }).eq('id', id).select('id');
+    if (error || !data?.length) { b.disabled = false; return toast(error?.message || 'Action refusée par la base de données (droits modérateur manquants).', true); }
+    toast(etat === 'publie' ? 'Accepté : la fiche est publiée.' : 'Refusé.'); route();
+  }));
+  $$('[data-sig]').forEach(b => b.addEventListener('click', async () => {
+    b.disabled = true;
+    const { data, error } = await sb.from('signalements').delete().eq('id', b.dataset.sig).select('id');
+    if (error || !data?.length) { b.disabled = false; return toast(error?.message || 'Suppression refusée par la base de données.', true); }
+    toast('Signalement supprimé.'); route();
+  }));
 }
 
 /* ---------- Démarrage ---------- */
