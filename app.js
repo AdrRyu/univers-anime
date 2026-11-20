@@ -21,7 +21,7 @@ const date = d => new Date(d).toLocaleDateString('fr-FR');
 const nomP = p => [p.prenom, p.nom].filter(Boolean).join(' ');
 const vignette = (u, t) => u ? `<img src="${esc(u)}" alt="${esc(t)}" loading="lazy">` : `<div class="vide">${esc((t || '?')[0].toUpperCase())}</div>`;
 const carteO = o => `<a class="carte" href="#/oeuvre/${o.id}">${vignette(o.image_url, o.titre)}<div class="carte-t"><b>${esc(o.titre)}</b><span>${o.type === 'manga' ? 'Manga' : 'Animé'}${o.date_sortie ? ' (' + o.date_sortie.slice(0, 4) + ')' : ''}</span></div></a>`;
-const carteP = p => `<a class="carte" href="#/personnage/${p.id}">${vignette(p.image_url, p.nom)}<div class="carte-t"><b>${esc(nomP(p))}</b><span>${p.vues} vue${p.vues > 1 ? 's' : ''}</span></div></a>`;
+const carteP = p => `<a class="carte" href="#/${p.categorie === 'solve_rp' ? 'solve/fiche' : 'personnage'}/${p.id}">${vignette(p.image_url, p.nom)}<div class="carte-t"><b>${esc(nomP(p))}</b><span>${p.vues} vue${p.vues > 1 ? 's' : ''}</span></div></a>`;
 const grille = (items, fn, vide) => items && items.length ? `<div class="grille">${items.map(fn).join('')}</div>` : `<p class="vide-txt">${vide}</p>`;
 const section = (titre, html, plus) => `<div class="titre-sec"><h2>${titre}</h2>${plus ? `<a href="${plus}">Tout voir</a>` : ''}</div>${html}`;
 const ligne = (l, v) => v ? `<div class="ligne"><dt>${l}</dt><dd>${esc(v)}</dd></div>` : '';
@@ -95,7 +95,7 @@ async function accueil() {
   const [pop, rec, per, an, cm] = await Promise.all([
     pub('oeuvres').order('vues', { ascending: false }).limit(6),
     pub('oeuvres').order('created_at', { ascending: false }).limit(6),
-    pub('personnages').order('vues', { ascending: false }).limit(6),
+    pub('personnages').eq('categorie', 'anime').order('vues', { ascending: false }).limit(6),
     sb.from('anecdotes').select('texte,created_at,oeuvre_id,personnage_id').eq('publication', 'publie').order('created_at', { ascending: false }).limit(5),
     sb.from('commentaires').select('texte,created_at,oeuvre_id,personnage_id,profiles(pseudo)').order('created_at', { ascending: false }).limit(5)
   ]);
@@ -116,6 +116,7 @@ async function accueil() {
         <a class="hero-carte" href="#/catalogue/personnage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span><b>Personnages</b><small>Apprends-en plus sur tes héros préférés</small></span><i class="fl">›</i></a>
         <a class="hero-carte" href="#/catalogue/manga"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6c-2-1.5-5-2-8-2v14c3 0 6 .5 8 2 2-1.5 5-2 8-2V4c-3 0-6 .5-8 2z"/><path d="M12 6v14"/></svg><span><b>Mangas</b><small>Explore les mangas et leurs histoires</small></span><i class="fl">›</i></a>
         <a class="hero-carte" href="#/ajouter/anime"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg><span><b>Contribuer</b><small>Ajoute des fiches et rejoins la communauté</small></span><i class="fl">›</i></a>
+             <a class="hero-carte" href="#/solve"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg><span><b>Solve RP</b><small>Les personnages du serveur Solve RP</small></span><i class="fl">›</i></a>
       </div>
       <a class="btn-explore" href="#/catalogue/anime">Explore dès maintenant »</a>
       <button type="button" class="hero-fleche" aria-label="Voir la suite" onclick="document.querySelector('.titre-sec').scrollIntoView({behavior:'smooth'})">↓</button>
@@ -132,6 +133,7 @@ async function catalogue(type, q) {
   const titre = perso ? 'Personnages' : type === 'manga' ? 'Mangas' : 'Animés';
   let req = perso ? sb.from('personnages').select('*') : sb.from('oeuvres').select('*').eq('type', type === 'manga' ? 'manga' : 'anime');
   req = req.eq('publication', 'publie');
+    if (perso) req = req.eq('categorie', 'anime');
   if (!perso) {
     if (q.get('genre')) req = req.contains('genres', [q.get('genre')]);
     if (q.get('statut')) req = req.eq('statut', q.get('statut'));
