@@ -84,7 +84,7 @@ window.addEventListener('hashchange', route);
 async function route() {
   const [chemin, qs] = (location.hash.slice(1) || '/').split('?');
   const q = new URLSearchParams(qs || '');
-  const [a, b, c] = chemin.split('/').filter(Boolean);
+  const [a, b] = chemin.split('/').filter(Boolean);
   app.innerHTML = '<div class="charge">Chargement…</div>';
   window.scrollTo(0, 0);
   try {
@@ -92,7 +92,7 @@ async function route() {
     else if (a === 'catalogue') await catalogue(b, q);
     else if (a === 'recherche') await recherche(decodeURIComponent(b || ''));
     else if (a === 'oeuvre') await ficheO(+b);
-    else if (a === 'solve' || a === 'solveRoute') await solveRoute(b, c);
+    else if (a === 'solve' || a === 'solveRoute') await solveRoute(b, q);
     else if (a === 'personnage') await ficheP(+b);
     else if (a === 'connexion') connexion(q.get('mode'));
     else if (a === 'profil') await pageProfil(b ? decodeURIComponent(b) : null);
@@ -234,15 +234,6 @@ function lierCommunaute(col, id) {
 }
 const boutonSignaler = () => user ? `<button class="btn petit sec" id="signaler">Signaler un problème</button>` : '';
 
-/* ---------- Solve RP ---------- */
-async function solveRoute(sous, id) {
-  if (sous === 'fiche') return ficheP(+id);
-  const { data, error } = await sb.from('personnages').select('*').eq('publication', 'publie').eq('categorie', 'solve_rp').order('vues', { ascending: false }).limit(60);
-  if (error) throw error;
-  app.innerHTML = `<h1>Solve RP</h1><p class="vide-txt">Les personnages du serveur Solve RP.</p>
-    ${grille(data, carteP, 'Aucun personnage Solve RP pour l’instant.')}`;
-}
-
 /* ---------- Fiche d’une œuvre ---------- */
 async function ficheO(id) {
   const { data: o, error } = await sb.from('oeuvres').select('*').eq('id', id).maybeSingle();
@@ -276,6 +267,7 @@ async function ficheP(id) {
   const { data: p, error } = await sb.from('personnages').select('*').eq('id', id).maybeSingle();
   if (error) throw error;
   if (!p) { app.innerHTML = introuvable(); return; }
+  if (p.categorie === 'solve_rp') return ficheSolve(id);
   if (p.publication === 'publie') sb.rpc('incrementer_vue', { p_type: 'personnage', p_id: id });
   const [ol, gal, fav, com] = await Promise.all([
     sb.from('oeuvre_personnages').select('role,oeuvres(*)').eq('personnage_id', id),
@@ -453,7 +445,7 @@ async function moderation() {
   app.innerHTML = `<h1>Modération</h1>
     <p class="vide-txt">Les propositions des visiteurs apparaissent ici. « Accepter » les publie sur le site, « Refuser » les cache.</p>
     ${bloc('Fiches animés et mangas', o.data, x => `<div class="comm"><b>${esc(x.titre)}</b> (${x.type === 'manga' ? 'manga' : 'animé'}) <a href="#/oeuvre/${x.id}">voir la fiche</a><br>${esc((x.synopsis || '').slice(0, 220))}${boutons('oeuvres', x.id)}</div>`)}
-    ${bloc('Fiches personnages', p.data, x => `<div class="comm"><b>${esc(nomP(x))}</b> <a href="#/personnage/${x.id}">voir la fiche</a><br>${esc((x.personnalite || x.histoire || '').slice(0, 220))}${boutons('personnages', x.id)}</div>`)}
+    ${bloc('Fiches personnages', p.data, x => `<div class="comm"><b>${esc(nomP(x))}</b>${x.categorie === 'solve_rp' ? ' (Solve RP)' : ''} <a href="#/${x.categorie === 'solve_rp' ? 'solve/fiche' : 'personnage'}/${x.id}">voir la fiche</a><br>${esc((x.personnalite || x.histoire || '').slice(0, 220))}${boutons('personnages', x.id)}</div>`)}
     ${bloc('Anecdotes', a.data, x => `<div class="comm">${esc(x.texte)}<br><a href="${lienFiche(x)}">voir la fiche</a>${boutons('anecdotes', x.id)}</div>`)}
     ${bloc('Images de galerie', g.data, x => `<div class="comm"><img src="${esc(x.url)}" alt="" style="max-width:220px;border-radius:10px"><br>${x.legende ? esc(x.legende) + '<br>' : ''}<small>Source : ${esc(x.source || 'non indiquée')}</small> <a href="#/personnage/${x.personnage_id}">voir la fiche</a>${boutons('galerie', x.id)}</div>`)}
     ${bloc('Signalements', s.data, x => `<div class="comm"><b>${esc(x.cible_type)} n°${esc(x.cible_id)}</b> : ${esc(x.raison)} <a href="#/${x.cible_type === 'oeuvre' ? 'oeuvre' : 'personnage'}/${esc(x.cible_id)}">voir la fiche</a><div style="margin-top:.6rem"><button class="btn petit sec" data-sig="${x.id}">Supprimer le signalement</button></div></div>`)}`;
