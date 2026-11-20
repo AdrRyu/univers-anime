@@ -75,3 +75,6 @@ textarea{min-height:90px;resize:vertical}
 .charge{color:var(--doux);padding:3rem 0;text-align:center}
 @media(max-width:720px){.fiche{grid-template-columns:1fr}.fiche .aff{max-width:220px}.rech-haut{width:100%;order:5}.ligne{grid-template-columns:1fr}.deux{grid-template-columns:1fr}.rech-hero{flex-direction:column}.rech-hero .btn{padding:.8rem}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.cloche{position:relative;margin-right:.7rem;text-decoration:none;font-size:1.25rem}
+.cloche-n{position:absolute;top:-7px;right:-9px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#ef4444;color:#fff;font:600 .7rem/18px Figtree,system-ui,sans-serif;text-align:center}
+.cloche-n[hidden]{display:none}
