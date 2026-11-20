@@ -92,7 +92,7 @@ async function route() {
     else if (a === 'catalogue') await catalogue(b, q);
     else if (a === 'recherche') await recherche(decodeURIComponent(b || ''));
     else if (a === 'oeuvre') await ficheO(+b);
-    else if (a === 'solve') await solveRoute(b, c);
+    else if (a === 'solve' || a === 'solveRoute') await solveRoute(b, c);
     else if (a === 'personnage') await ficheP(+b);
     else if (a === 'connexion') connexion(q.get('mode'));
     else if (a === 'profil') await pageProfil(b ? decodeURIComponent(b) : null);
