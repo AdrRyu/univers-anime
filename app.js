@@ -62,6 +62,14 @@ async function majCloche() {
   n.hidden = !count;
 }
 setInterval(() => { if (user) majCloche(); }, 60000);
+
+async function charger(u) {
+  user = u;
+  profil = null;
+  if (u) {
+    const { data } = await sb.from('profiles').select('*').eq('id', u.id).maybeSingle();
+    profil = data;
+  }
   nav(); route();
 }
 document.addEventListener('submit', e => {
@@ -76,8 +84,7 @@ window.addEventListener('hashchange', route);
 async function route() {
   const [chemin, qs] = (location.hash.slice(1) || '/').split('?');
   const q = new URLSearchParams(qs || '');
-  const [a, b] = chemin.split('/').filter(Boolean);
-  class="charge">Chargement…</div>';
+  const [a, b, c] = chemin.split('/').filter(Boolean);
   app.innerHTML = '<div class="charge">Chargement…</div>';
   window.scrollTo(0, 0);
   try {
@@ -85,7 +92,7 @@ async function route() {
     else if (a === 'catalogue') await catalogue(b, q);
     else if (a === 'recherche') await recherche(decodeURIComponent(b || ''));
     else if (a === 'oeuvre') await ficheO(+b);
-    else if (a === 'solve') await solveRoute(b, q);
+    else if (a === 'solve') await solveRoute(b, c);
     else if (a === 'personnage') await ficheP(+b);
     else if (a === 'connexion') connexion(q.get('mode'));
     else if (a === 'profil') await pageProfil(b ? decodeURIComponent(b) : null);
@@ -143,7 +150,7 @@ async function catalogue(type, q) {
   const titre = perso ? 'Personnages' : type === 'manga' ? 'Mangas' : 'Animés';
   let req = perso ? sb.from('personnages').select('*') : sb.from('oeuvres').select('*').eq('type', type === 'manga' ? 'manga' : 'anime');
   req = req.eq('publication', 'publie');
-    if (perso) req = req.eq('categorie', 'anime');
+  if (perso) req = req.eq('categorie', 'anime');
   if (!perso) {
     if (q.get('genre')) req = req.contains('genres', [q.get('genre')]);
     if (q.get('statut')) req = req.eq('statut', q.get('statut'));
@@ -226,6 +233,15 @@ function lierCommunaute(col, id) {
   });
 }
 const boutonSignaler = () => user ? `<button class="btn petit sec" id="signaler">Signaler un problème</button>` : '';
+
+/* ---------- Solve RP ---------- */
+async function solveRoute(sous, id) {
+  if (sous === 'fiche') return ficheP(+id);
+  const { data, error } = await sb.from('personnages').select('*').eq('publication', 'publie').eq('categorie', 'solve_rp').order('vues', { ascending: false }).limit(60);
+  if (error) throw error;
+  app.innerHTML = `<h1>Solve RP</h1><p class="vide-txt">Les personnages du serveur Solve RP.</p>
+    ${grille(data, carteP, 'Aucun personnage Solve RP pour l’instant.')}`;
+}
 
 /* ---------- Fiche d’une œuvre ---------- */
 async function ficheO(id) {
@@ -317,7 +333,7 @@ function connexion(mode) {
       const { data, error } = await sb.auth.signUp({ email, password, options: { data: { pseudo: f.get('pseudo').trim() } } });
       if (error) return toast(error.message, true);
       if (!data.session) { app.innerHTML = `<div class="bloc etroit"><h1>Vérifie ta boîte mail</h1><p>Un lien de confirmation vient d’être envoyé à ${esc(email)}. Clique dessus, puis reviens te connecter.</p></div>`; return; }
-      toast('Bienvenue sur Univers animé !'); location.hash = '#/profil';
+      toast('Bienvenue sur AnimeVerse !'); location.hash = '#/profil';
     } else {
       const { error } = await sb.auth.signInWithPassword({ email, password });
       if (error) return toast(error.message.includes('Invalid') ? 'E-mail ou mot de passe incorrect.' : error.message, true);
